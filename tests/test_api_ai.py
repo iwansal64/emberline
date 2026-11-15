@@ -1,8 +1,10 @@
 """Tests for the AI satellite telemetry context analyzer endpoint (POST /api/ai/analyze-hotspot)."""
+import json
 import unittest
+from unittest.mock import MagicMock, patch
 from fastapi.testclient import TestClient
 
-from api.app import app, _analyze_hotspot_heuristic
+from api.app import app, _analyze_hotspot_heuristic, _call_grok_hotspot_analysis
 
 
 class TestAIHotspotAnalyzer(unittest.TestCase):
@@ -32,7 +34,6 @@ class TestAIHotspotAnalyzer(unittest.TestCase):
         self.assertIn("69.52 MW", res["telemetry_context"]["frp_interpretation"])
 
     def test_api_endpoint_success_heuristic_fallback(self):
-        from unittest.mock import patch
         with patch("api.app._get_grok_key", return_value=(None, "heuristic")):
             resp = self.client.post("/api/ai/analyze-hotspot", json={
                 "lat": -1.8,
@@ -53,6 +54,29 @@ class TestAIHotspotAnalyzer(unittest.TestCase):
             self.assertNotIn("Kalimantan Tengah", data["analysis"])
             self.assertIn("Tidak dinilai dari rekaman ini.", data["telemetry_context"]["biome"])
             self.assertIn("telemetry_context", data)
+
+    def test_xai_uses_current_responses_api(self):
+        response = MagicMock()
+        response.read.return_value = json.dumps({"output_text": "xAI response"}).encode()
+        with patch("api.app._get_grok_key", return_value=("xai-test-key", "grok")), \
+             patch("api.app.urllib.request.urlopen") as urlopen:
+            urlopen.return_value.__enter__.return_value = response
+            result = _call_grok_hotspot_analysis(
+                lat=0.5,
+                lon=101.5,
+                date="2023-08-20",
+                frp=15.2,
+                sensor="viirs",
+                conf="h",
+                daynight="D",
+                lang="en",
+            )
+
+        request = urlopen.call_args.args[0]
+        self.assertEqual(request.full_url, "https://api.x.ai/v1/responses")
+        self.assertEqual(json.loads(request.data)["model"], "grok-4.7")
+        self.assertEqual(result["provider"], "grok")
+        self.assertEqual(result["analysis"], "xAI response")
 
     def test_api_endpoint_bad_coordinates(self):
         resp = self.client.post("/api/ai/analyze-hotspot", json={
@@ -82,7 +106,6 @@ class TestAIHotspotAnalyzer(unittest.TestCase):
         self.assertIn("ringkasan metadata", data["note"])
 
     def test_api_endpoint_english_language_support(self):
-        from unittest.mock import patch
         with patch("api.app._get_grok_key", return_value=(None, "heuristic")):
             resp = self.client.post("/api/ai/analyze-hotspot", json={
                 "lat": 0.73494,
@@ -105,7 +128,6 @@ class TestAIHotspotAnalyzer(unittest.TestCase):
             self.assertEqual(data["telemetry_context"]["seasonal_climate"], "No climate data supplied.")
 
     def test_api_endpoint_indonesian_language_default(self):
-        from unittest.mock import patch
         with patch("api.app._get_grok_key", return_value=(None, "heuristic")):
             resp = self.client.post("/api/ai/analyze-hotspot", json={
                 "lat": 0.73494,

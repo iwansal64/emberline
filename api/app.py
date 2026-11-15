@@ -854,22 +854,31 @@ def _call_grok_hotspot_analysis(
         provider_name = "groq"
         user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
     else:
-        api_url = "https://api.x.ai/v1/chat/completions"
-        model_name = "grok-2-latest"
-        fallback_model = "grok-beta"
+        api_url = "https://api.x.ai/v1/responses"
+        model_name = "grok-4.7"
+        fallback_model = "grok-4.3"
         provider_name = "grok"
         user_agent = "EmberLine/1.0"
 
     def _execute_req(m_name: str) -> str:
-        req_payload = json.dumps({
-            "model": m_name,
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-            "temperature": 0.2,
-            "max_tokens": 1200,
-        }).encode("utf-8")
+        if provider_type == "groq":
+            payload = {
+                "model": m_name,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                "temperature": 0.2,
+                "max_tokens": 1200,
+            }
+        else:
+            payload = {
+                "model": m_name,
+                "instructions": system_prompt,
+                "input": user_prompt,
+                "max_output_tokens": 1200,
+            }
+        req_payload = json.dumps(payload).encode("utf-8")
 
         req = urllib.request.Request(
             api_url,
@@ -881,9 +890,28 @@ def _call_grok_hotspot_analysis(
             },
             method="POST",
         )
-        with urllib.request.urlopen(req, timeout=18) as resp:
-            raw_res = json.loads(resp.read().decode("utf-8"))
+        try:
+            with urllib.request.urlopen(req, timeout=18) as resp:
+                raw_res = json.loads(resp.read().decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            raw_error = exc.read().decode("utf-8", "replace")[:500]
+            try:
+                parsed_error = json.loads(raw_error)
+                detail = parsed_error.get("error", parsed_error) if isinstance(parsed_error, dict) else parsed_error
+            except (TypeError, ValueError):
+                detail = raw_error
+            raise RuntimeError(f"HTTP {exc.code}: {str(detail)[:300]}") from exc
+
+        if provider_type == "groq":
             return raw_res.get("choices", [{}])[0].get("message", {}).get("content", "")
+        content = raw_res.get("output_text", "")
+        if content:
+            return content
+        for item in raw_res.get("output", []):
+            for part in item.get("content", []):
+                if part.get("type") == "output_text" and part.get("text"):
+                    return part["text"]
+        return ""
 
     try:
         content = ""
