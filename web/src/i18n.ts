@@ -66,7 +66,7 @@ export const DICTIONARY = {
     overview_aoi_span: "Rentang Temporal",
     overview_aoi_protocol: "Standar Kalibrasi",
     overview_aoi_status: "Status Validasi",
-    overview_btn_calendar_long: "Buka Kalender Musiman (C-06) →",
+    overview_btn_calendar_long: "Buka Kalender Musiman 366-Hari →",
     overview_btn_map_long: "Buka Peta Satelit 0,1° ↗",
     overview_btn_method_long: "Dokumentasi & Validasi Metodologi →",
     overview_region: "Wilayah",
@@ -75,7 +75,7 @@ export const DICTIONARY = {
 
     // HUD / Gauge Card (Dynamic Telemetry)
     hud_kicker: "TELEMETRI SIKLUS HISTORIS",
-    hud_demo: "SAINS C-06",
+    hud_demo: "OBSERVASI SATELIT",
     hud_safe: "Ilustrasi",
     hud_concept_coverage: "Indeks Hari Ini",
     hud_concept_val: "Siklus 366-Hari",
@@ -83,7 +83,7 @@ export const DICTIONARY = {
     hud_obs_val: "Ags–Okt",
     hud_context_label: "Pengamatan",
     hud_context_val: "Aqua + S-NPP",
-    hud_note: "Indeks tanggal hari ini dihitung dari kurva klimatologi 366-hari C-06 wilayah terpilih. Deskriptif historis, bukan prakiraan cuaca.",
+    hud_note: "Indeks tanggal hari ini dihitung dari kurva klimatologi 366-hari wilayah terpilih. Deskriptif historis, bukan prakiraan cuaca.",
     hud_aria: "Indeks klimatologi historis tanggal hari ini untuk wilayah terpilih.",
 
     // Scrollytelling Story Acts
@@ -106,11 +106,16 @@ export const DICTIONARY = {
       "EmberLine merangkum observasi masa lalu, bukan kondisi kebakaran saat ini. Untuk informasi terkini, rujuk BPBD setempat.",
     story_act3_chip_historical: "Historis, bukan prediksi",
     story_act3_chip_agency: "Informasi resmi BPBD",
-    story_risk_safe: "Ilustrasi 1",
-    story_risk_advisory: "Ilustrasi 2",
-    story_risk_warning: "Ilustrasi 3",
-    story_risk_danger: "Ilustrasi 4",
-    story_risk_scale_aria: "Skala warna ilustratif, bukan tingkat bahaya",
+    story_density_no_data: "Belum Ada",
+    story_density_zero: "0 rekaman",
+    story_density_low: "Rendah",
+    story_density_medium: "Sedang",
+    story_density_high: "Tinggi",
+    story_risk_safe: "Belum Ada",
+    story_risk_advisory: "Rendah",
+    story_risk_warning: "Sedang",
+    story_risk_danger: "Tinggi",
+    story_risk_scale_aria: "Skala indikator kepadatan grid: Belum Ada, 0 rekaman, Rendah, Sedang, Tinggi",
 
     // FireMap Screen
     map_fullscreen: "Layar Penuh",
@@ -323,7 +328,7 @@ export const DICTIONARY = {
     overview_aoi_span: "Temporal Span",
     overview_aoi_protocol: "Calibration Standard",
     overview_aoi_status: "Validation Status",
-    overview_btn_calendar_long: "Open Seasonal Calendar (C-06) →",
+    overview_btn_calendar_long: "Open 366-Day Seasonal Calendar →",
     overview_btn_map_long: "Open 0.1° Satellite Map ↗",
     overview_btn_method_long: "Methodology Documentation & Validation →",
     overview_region: "Region",
@@ -332,7 +337,7 @@ export const DICTIONARY = {
 
     // HUD / Gauge Card (Dynamic Telemetry)
     hud_kicker: "HISTORICAL CYCLE TELEMETRY",
-    hud_demo: "C-06 SCIENCE",
+    hud_demo: "SATELLITE OBSERVATION",
     hud_safe: "Illustrative",
     hud_concept_coverage: "Today's Index",
     hud_concept_val: "366-Day Cycle",
@@ -340,7 +345,7 @@ export const DICTIONARY = {
     hud_obs_val: "Aug–Oct",
     hud_context_label: "Observations",
     hud_context_val: "Aqua + S-NPP",
-    hud_note: "Today's index is computed from the 366-day C-06 climatology curve for the selected region. Descriptive historical telemetry, not a weather forecast.",
+    hud_note: "Today's index is computed from the 366-day climatology curve for the selected region. Descriptive historical telemetry, not a weather forecast.",
     hud_aria: "Historical climatology index for today's date in the selected region.",
 
     // Scrollytelling Story Acts
@@ -363,11 +368,16 @@ export const DICTIONARY = {
       "EmberLine summarizes past observations, not current fire conditions. Check local authorities for current information.",
     story_act3_chip_historical: "Historical, not predictive",
     story_act3_chip_agency: "Official local authority updates",
-    story_risk_safe: "Example 1",
-    story_risk_advisory: "Example 2",
-    story_risk_warning: "Example 3",
-    story_risk_danger: "Example 4",
-    story_risk_scale_aria: "Illustrative color scale, not a hazard rating",
+    story_density_no_data: "No Data",
+    story_density_zero: "0 records",
+    story_density_low: "Low",
+    story_density_medium: "Medium",
+    story_density_high: "High",
+    story_risk_safe: "No Data",
+    story_risk_advisory: "Low",
+    story_risk_warning: "Medium",
+    story_risk_danger: "High",
+    story_risk_scale_aria: "Grid density indicator scale: No Data, 0 records, Low, Medium, High",
 
     // FireMap Screen
     map_fullscreen: "Fullscreen",

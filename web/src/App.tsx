@@ -123,31 +123,8 @@ export default function App() {
             </Suspense>
           )}
           <header className="topbar">
-            <div className="topbar-header-row">
-              <div className="brand">
-                <img src="/emberline_logo.png" alt="Logo" className="brand-logo-img" style={{ width: 140, height: 46, objectFit: "contain" }} />
-              </div>
-
-              <div className="topbar-actions">
-                <button
-                  className="lang-toggle-btn"
-                  onClick={toggleLang}
-                  title={t("nav_lang_toggle")}
-                  aria-label={t("nav_lang_toggle")}
-                >
-                  {lang === "id" ? "ID" : "EN"}
-                </button>
-
-                <button
-                  className="theme-toggle-btn"
-                  onClick={toggleTheme}
-                  title={theme === "dark" ? t("nav_theme_light") : t("nav_theme_dark")}
-                  aria-label={theme === "dark" ? t("nav_theme_light") : t("nav_theme_dark")}
-                  aria-pressed={theme === "dark"}
-                >
-                  <ContrastThemeIcon />
-                </button>
-              </div>
+            <div className="brand">
+              <img src="/emberline_logo.png" alt="Logo" className="brand-logo-img" style={{ width: 140, height: 46, objectFit: "contain" }} />
             </div>
 
             <nav className="iconnav" role="tablist" aria-label="Console Sections">
@@ -170,6 +147,27 @@ export default function App() {
                 </button>
               ))}
             </nav>
+
+            <div className="topbar-actions">
+              <button
+                className="lang-toggle-btn"
+                onClick={toggleLang}
+                title={t("nav_lang_toggle")}
+                aria-label={t("nav_lang_toggle")}
+              >
+                {lang === "id" ? "ID" : "EN"}
+              </button>
+
+              <button
+                className="theme-toggle-btn"
+                onClick={toggleTheme}
+                title={theme === "dark" ? t("nav_theme_light") : t("nav_theme_dark")}
+                aria-label={theme === "dark" ? t("nav_theme_light") : t("nav_theme_dark")}
+                aria-pressed={theme === "dark"}
+              >
+                <ContrastThemeIcon />
+              </button>
+            </div>
           </header>
 
           <main className={"content" + (tab === "firemap" ? " content-flush content-firemap" : "") + (tab === "overview" ? " content-overview" : "")}>

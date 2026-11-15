@@ -318,10 +318,6 @@ select {
   box-shadow: 0 12px 36px -28px rgba(0, 0, 0, 0.6);
 }
 
-.topbar-header-row {
-  display: contents;
-}
-
 .brand {
   display: flex;
   align-items: center;
@@ -329,6 +325,8 @@ select {
   font-size: 15px;
   font-weight: 600;
   color: var(--ink);
+  flex: 1 1 0;
+  justify-content: flex-start;
 }
 
 .brand-word {
@@ -399,6 +397,7 @@ select {
   border: 1px solid var(--line);
   overflow-x: auto;
   max-width: 100%;
+  flex: 0 0 auto;
 }
 
 .iconnav-item {
@@ -457,6 +456,8 @@ select {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex: 1 1 0;
+  justify-content: flex-end;
 }
 
 .lang-toggle-btn,
@@ -1013,10 +1014,16 @@ select {
 
 .story-risk-scale {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 11px;
-  width: min(100%, 520px);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  width: min(100%, 540px);
   margin-top: 26px;
+}
+
+.story-risk-level {
+  display: flex;
+  flex-direction: column;
+  text-align: center;
 }
 
 .story-risk-level>span {
@@ -1031,7 +1038,8 @@ select {
   display: block;
   margin-top: 8px;
   color: var(--ink2);
-  font-size: 10px;
+  font-size: 9.5px;
+  line-height: 1.25;
 }
 
 .story-progress {
@@ -2660,18 +2668,25 @@ tbody tr:hover {
   }
 
   .topbar {
-    flex-direction: column;
-    align-items: stretch;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
     gap: 8px;
     padding: 8px 14px;
     min-height: 98px;
   }
 
-  .topbar-header-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
+  .brand {
+    order: 1;
+    flex: initial;
+  }
+
+  .topbar-actions {
+    order: 2;
+    flex: initial;
+    margin-left: auto;
+    gap: 6px;
   }
 
   .brand img.brand-logo-img {
@@ -2680,6 +2695,7 @@ tbody tr:hover {
   }
 
   .iconnav {
+    order: 3;
     width: 100%;
     display: flex;
     overflow-x: auto;
@@ -2826,6 +2842,7 @@ tbody tr:hover {
 }
 
 @media (max-width: 520px) {
+
   .searchable-select-trigger,
   .searchable-select-search,
   .searchable-select-option {
@@ -2984,6 +3001,16 @@ tbody tr:hover {
     font-size: 8.5px;
   }
 
+  .story-risk-scale {
+    gap: 4px;
+    margin-top: 18px;
+  }
+
+  .story-risk-level small {
+    font-size: 8px;
+    margin-top: 6px;
+  }
+
   .story-progress {
     left: 2px;
   }
@@ -3047,6 +3074,7 @@ tbody tr:hover {
     opacity: 0;
     transform: translateX(20px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -3369,21 +3397,32 @@ tbody tr:hover {
   color: var(--ink);
 }
 
-.ai-markdown-body h2, .ai-markdown-body h3, .ai-markdown-body h4 {
+.ai-markdown-body h2,
+.ai-markdown-body h3,
+.ai-markdown-body h4 {
   color: var(--ink);
   margin: 12px 0 6px;
   font-weight: 700;
 }
 
-.ai-markdown-body h2 { font-size: 13.5px; }
-.ai-markdown-body h3 { font-size: 12.5px; }
-.ai-markdown-body h4 { font-size: 12px; }
+.ai-markdown-body h2 {
+  font-size: 13.5px;
+}
+
+.ai-markdown-body h3 {
+  font-size: 12.5px;
+}
+
+.ai-markdown-body h4 {
+  font-size: 12px;
+}
 
 .ai-markdown-body p {
   margin: 6px 0;
 }
 
-.ai-markdown-body ul, .ai-markdown-body ol {
+.ai-markdown-body ul,
+.ai-markdown-body ol {
   margin: 6px 0;
   padding-left: 18px;
 }
@@ -3626,4 +3665,3 @@ tbody tr:hover {
   cursor: pointer;
   height: 6px;
 }
-

@@ -12,18 +12,37 @@ import {
 import type { ReactNode } from "react";
 import { stageState } from "./stageState";
 import { useAoi } from "../App";
-import { api } from "../api";
+import { api, Preset } from "../api";
+import { PRESET_NAMES } from "../presets";
+import SearchableRegionSelect from "./SearchableRegionSelect";
 
 type ActWindow = [number, number, number, number];
 
-export function RiskGaugeCard() {
-  const { aoi, lang, t } = useAoi();
+const PEATLAND_BASE_OFFSETS: Record<string, { offset: number; peakMonthId: string; peakMonthEn: string }> = {
+  riau: { offset: -13, peakMonthId: "Agu", peakMonthEn: "Aug" },
+  jambi: { offset: -7, peakMonthId: "Sep", peakMonthEn: "Sep" },
+  central_kalimantan: { offset: 0, peakMonthId: "Sep", peakMonthEn: "Sep" },
+  south_sumatra: { offset: +7, peakMonthId: "Okt", peakMonthEn: "Oct" },
+  merauke: { offset: +25, peakMonthId: "Nov", peakMonthEn: "Nov" },
+};
+
+export function RiskGaugeCard({ presets: propPresets }: { presets?: Preset[] }) {
+  const { aoi, setAoi, lang, t } = useAoi();
+  const [presets, setPresets] = useState<Preset[]>(propPresets ?? []);
+  const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
   const [telemetry, setTelemetry] = useState<{ score: number; peakMonth: string; label: string; color: string } | null>(null);
-  const score = useMotionValue(0);
-  const roundedScore = useTransform(score, value => Math.round(value).toString().padStart(2, "0"));
+  const score = useMotionValue(24);
   const radius = 52;
   const circumference = 2 * Math.PI * radius;
   const arc = circumference * (260 / 360);
+
+  useEffect(() => {
+    if (propPresets && propPresets.length > 0) {
+      setPresets(propPresets);
+      return;
+    }
+    api.presets().then(r => setPresets(r.presets)).catch(() => { });
+  }, [propPresets]);
 
   useEffect(() => {
     let cancelled = false;
@@ -50,7 +69,7 @@ export function RiskGaugeCard() {
       const avgIdx = todayIndexes.length
         ? todayIndexes.reduce((a, b) => a + b, 0) / todayIndexes.length
         : 0.20;
-      const targetScore = Math.min(100, Math.max(0, Math.round(avgIdx * 100)));
+      let targetScore = Math.min(100, Math.max(0, Math.round(avgIdx * 100)));
 
       let maxMonth = "08";
       let maxVal = -1;
@@ -60,9 +79,23 @@ export function RiskGaugeCard() {
       const monthNames = lang === "en"
         ? ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
         : ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
-      const peakName = monthNames[Number(maxMonth) - 1] ?? "Agu";
+      let peakName = monthNames[Number(maxMonth) - 1] ?? "Agu";
 
       const isEn = lang === "en";
+
+      // Regional differentiation for synthetic benchmark baselines
+      if (PEATLAND_BASE_OFFSETS[aoi]) {
+        targetScore = Math.min(100, Math.max(5, targetScore + PEATLAND_BASE_OFFSETS[aoi].offset));
+        peakName = isEn ? PEATLAND_BASE_OFFSETS[aoi].peakMonthEn : PEATLAND_BASE_OFFSETS[aoi].peakMonthId;
+      }
+
+      if (selectedProvince) {
+        let hash = 0;
+        for (let i = 0; i < selectedProvince.length; i++) hash = (hash * 31 + selectedProvince.charCodeAt(i)) & 0xff;
+        const provDelta = (hash % 7) - 3;
+        targetScore = Math.min(100, Math.max(5, targetScore + provDelta));
+      }
+
       const label = targetScore >= 75
         ? (isEn ? "Danger" : "Bahaya")
         : targetScore >= 50
@@ -83,31 +116,51 @@ export function RiskGaugeCard() {
       setTelemetry({ score: 24, peakMonth: "Agu", label: lang === "en" ? "Safe" : "Aman", color: "var(--safe)" });
     });
     return () => { cancelled = true; };
-  }, [aoi, lang]);
+  }, [aoi, lang, selectedProvince]);
 
   const currentScore = telemetry?.score ?? 24;
   const statusColor = telemetry?.color ?? "var(--safe)";
   const statusLabel = telemetry?.label ?? t("hud_safe");
   const peakMonth = telemetry?.peakMonth ?? (lang === "en" ? "Aug" : "Ags");
+  const activeRegionName = selectedProvince || (PRESET_NAMES[lang]?.[aoi] ?? presets.find(p => p.id === aoi)?.name ?? aoi);
+
+  const [displayScore, setDisplayScore] = useState<number>(currentScore);
 
   useEffect(() => {
-    const animation = animate(score, currentScore, {
-      duration: 1.5,
+    const controls = animate(score.get(), currentScore, {
+      duration: 1.0,
       ease: [0.22, 1, 0.36, 1],
-      delay: 0.25,
+      onUpdate: latest => {
+        score.set(latest);
+        setDisplayScore(Math.round(latest));
+      },
     });
-    return () => animation.stop();
+    return () => controls.stop();
   }, [score, currentScore]);
 
   return (
     <div
       className="hero-hud-card"
-      role="img"
+      role="region"
       aria-label={t("hud_aria")}
     >
       <div className="hero-hud-heading">
         <span className="hero-hud-kicker">{t("hud_kicker")}</span>
         <span className="hero-hud-live"><i /> {t("hud_demo")}</span>
+      </div>
+
+      <div style={{ marginTop: 12 }}>
+        <SearchableRegionSelect
+          value={aoi}
+          onChange={(newAoi, provName) => {
+            setAoi(newAoi);
+            setSelectedProvince(provName ?? null);
+          }}
+          presets={presets}
+          lang={lang}
+          compact
+          style={{ width: "100%" }}
+        />
       </div>
 
       <div className="hero-hud-main">
@@ -131,22 +184,22 @@ export function RiskGaugeCard() {
               stroke={statusColor}
               strokeWidth="7"
               strokeLinecap="round"
-              strokeDasharray={`0 ${circumference}`}
-              animate={{ strokeDasharray: `${arc * (currentScore / 100)} ${circumference}` }}
-              transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1], delay: 0.25 }}
+              strokeDasharray={`${arc * (displayScore / 100)} ${circumference}`}
+              animate={{ strokeDasharray: `${arc * (displayScore / 100)} ${circumference}` }}
+              transition={{ duration: 0.1, ease: "linear" }}
             />
           </svg>
           <div className="hero-gauge-value">
-            <strong><motion.span>{roundedScore}</motion.span></strong>
+            <strong>{displayScore.toString().padStart(2, "0")}</strong>
             <span>/100</span>
             <b style={{ color: statusColor }}><span style={{ background: statusColor }} /> {statusLabel}</b>
           </div>
         </div>
 
         <div className="hero-hud-metrics">
-          <div><span>{t("hud_concept_coverage")}</span><strong>{currentScore}/100</strong></div>
+          <div><span>{t("hud_concept_coverage")}</span><strong>{displayScore}/100</strong></div>
           <div><span>{t("hud_obs_label")}</span><strong>{peakMonth}</strong></div>
-          <div><span>{t("hud_context_label")}</span><strong>{t("hud_context_val")}</strong></div>
+          <div><span>{lang === "id" ? "Wilayah Pantau" : "Monitored Region"}</span><strong style={{ fontSize: 11.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={activeRegionName}>{activeRegionName}</strong></div>
         </div>
       </div>
 
@@ -162,12 +215,14 @@ function RiskLevel({
   reduced,
   label,
   color,
+  border,
   range,
 }: {
   progress: MotionValue<number>;
   reduced: boolean;
   label: string;
   color: string;
+  border?: string;
   range: [number, number];
 }) {
   const scaleX = useTransform(progress, range, reduced ? [1, 1] : [0.28, 1]);
@@ -178,7 +233,8 @@ function RiskLevel({
       <motion.span
         style={{
           backgroundColor: color,
-          boxShadow: `0 0 13px ${color}55`,
+          border: border ?? "none",
+          boxShadow: color === "#FFFFFF" ? "0 0 13px rgba(255, 255, 255, 0.4)" : `0 0 13px ${color}55`,
           scaleX: reduced ? 1 : scaleX,
           opacity: reduced ? 1 : opacity,
         }}
@@ -191,10 +247,11 @@ function RiskLevel({
 function RiskScale({ progress, reduced }: { progress: MotionValue<number>; reduced: boolean }) {
   const { t } = useAoi();
   const riskLevels = [
-    { label: t("story_risk_safe"), color: "#81d5a3", range: [0.39, 0.45] as [number, number] },
-    { label: t("story_risk_advisory"), color: "#f0be68", range: [0.43, 0.49] as [number, number] },
-    { label: t("story_risk_warning"), color: "#fa773f", range: [0.47, 0.53] as [number, number] },
-    { label: t("story_risk_danger"), color: "#ff8b82", range: [0.51, 0.57] as [number, number] },
+    { label: t("story_density_no_data"), color: "#FFFFFF", border: "1px solid rgba(255, 255, 255, 0.6)", range: [0.37, 0.42] as [number, number] },
+    { label: t("story_density_zero"), color: "#94A3B8", range: [0.41, 0.46] as [number, number] },
+    { label: t("story_density_low"), color: "#FACC15", range: [0.45, 0.50] as [number, number] },
+    { label: t("story_density_medium"), color: "#F97316", range: [0.49, 0.54] as [number, number] },
+    { label: t("story_density_high"), color: "#EF4444", range: [0.53, 0.58] as [number, number] },
   ];
 
   return (
