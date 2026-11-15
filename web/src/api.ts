@@ -57,7 +57,6 @@ export type HotspotAnalysisRequest = {
   daynight: string;
   region?: string;
   question?: string;
-  api_key?: string;
   lang?: string;
 };
 

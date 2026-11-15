@@ -470,9 +470,7 @@ export default function FireMap({ goCalendar }: { goCalendar: () => void }) {
   const [aiResponse, setAiResponse] = useState<HotspotAnalysisResponse | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiQuestion, setAiQuestion] = useState("");
-  const [grokApiKey] = useState(() => {
-    return localStorage.getItem("emberline_grok_key") || "";
-  });
+  const [aiSubmittedQuestion, setAiSubmittedQuestion] = useState("");
   const lastClickedDetectionRef = useRef<Detection | null>(null);
   const aiDrawerRef = useRef<HTMLDivElement>(null);
   const aiAnswerRef = useRef<HTMLDivElement>(null);
@@ -508,6 +506,7 @@ export default function FireMap({ goCalendar }: { goCalendar: () => void }) {
     setAiResponse(null);
     setAiError(null);
     setAiQuestion("");
+    setAiSubmittedQuestion("");
   }, [selectedDetection]);
 
   const closeAiDrawer = () => {
@@ -516,6 +515,8 @@ export default function FireMap({ goCalendar }: { goCalendar: () => void }) {
     setAiLoading(false);
     setAiResponse(null);
     setAiError(null);
+    setAiQuestion("");
+    setAiSubmittedQuestion("");
   };
 
   // Smoothly scroll down to AI answer when response arrives
@@ -553,7 +554,6 @@ export default function FireMap({ goCalendar }: { goCalendar: () => void }) {
         daynight: targetDet.daynight,
         region: selName || aoi,
         question: customQuestion || undefined,
-        api_key: grokApiKey.trim() || undefined,
         lang: lang,
       });
 
@@ -582,6 +582,14 @@ export default function FireMap({ goCalendar }: { goCalendar: () => void }) {
         setAiLoading(false);
       }
     }
+  };
+
+  const submitAiQuestion = (question: string) => {
+    const target = selectedDetection;
+    if (!target) return;
+    const submittedQuestion = question.trim();
+    setAiSubmittedQuestion(submittedQuestion);
+    triggerAiAnalysis(target, submittedQuestion || undefined);
   };
 
   useEffect(() => {
@@ -633,7 +641,7 @@ export default function FireMap({ goCalendar }: { goCalendar: () => void }) {
     return () => {
       delete (window as any).__emberline_open_ai_analyzer;
     };
-  }, [grokApiKey, selName, aoi, lang]);
+  }, [selName, aoi, lang]);
 
   // Sync selected region name only when global AOI actually changes from outside
   const prevAoiRef = useRef(aoi);
@@ -2150,7 +2158,7 @@ export default function FireMap({ goCalendar }: { goCalendar: () => void }) {
                     className="ai-chip-prompt"
                     onClick={() => {
                       setAiQuestion(promptChip);
-                      triggerAiAnalysis(selectedDetection, promptChip);
+                      submitAiQuestion(promptChip);
                     }}
                     disabled={aiLoading}
                   >
@@ -2168,14 +2176,15 @@ export default function FireMap({ goCalendar }: { goCalendar: () => void }) {
                   onChange={(e) => setAiQuestion(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !aiLoading) {
-                      triggerAiAnalysis(selectedDetection, aiQuestion);
+                      e.preventDefault();
+                      submitAiQuestion(aiQuestion);
                     }
                   }}
                 />
                 <button
                   type="button"
                   className="ai-submit-btn"
-                  onClick={() => triggerAiAnalysis(selectedDetection, aiQuestion)}
+                  onClick={() => submitAiQuestion(aiQuestion)}
                   disabled={aiLoading}
                 >
                   {aiLoading ? (lang === "id" ? "Memproses..." : "Processing...") : (lang === "id" ? "Kirim" : "Send")}
@@ -2209,7 +2218,7 @@ export default function FireMap({ goCalendar }: { goCalendar: () => void }) {
                   type="button"
                   className="seg-btn"
                   style={{ background: "var(--surface)", border: "1px solid var(--line)", fontSize: 11, padding: "4px 10px" }}
-                  onClick={() => triggerAiAnalysis(selectedDetection, aiQuestion)}
+                  onClick={() => triggerAiAnalysis(selectedDetection, aiSubmittedQuestion || undefined)}
                 >
                   {lang === "id" ? "Coba Lagi" : "Retry"}
                 </button>
@@ -2239,8 +2248,8 @@ export default function FireMap({ goCalendar }: { goCalendar: () => void }) {
                       {lang === "id" ? "Jawaban" : "Response"}
                     </span>
                     <span style={{ fontSize: 10.5, color: "var(--ink3)" }}>
-                      {aiQuestion
-                        ? (lang === "id" ? `Pertanyaan: "${aiQuestion}"` : `Inquiry: "${aiQuestion}"`)
+                      {aiSubmittedQuestion
+                        ? (lang === "id" ? `Pertanyaan: "${aiSubmittedQuestion}"` : `Inquiry: "${aiSubmittedQuestion}"`)
                         : (lang === "id" ? "Analisis Telemetri" : "Telemetry Analysis")}
                     </span>
                   </div>

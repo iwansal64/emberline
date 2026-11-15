@@ -69,12 +69,15 @@ class TestAIHotspotAnalyzer(unittest.TestCase):
                 sensor="viirs",
                 conf="h",
                 daynight="D",
+                question="What does this FRP value mean?",
                 lang="en",
             )
 
         request = urlopen.call_args.args[0]
+        payload = json.loads(request.data)
         self.assertEqual(request.full_url, "https://api.x.ai/v1/responses")
-        self.assertEqual(json.loads(request.data)["model"], "grok-4.7")
+        self.assertEqual(payload["model"], "grok-4.7")
+        self.assertIn("What does this FRP value mean?", payload["input"])
         self.assertEqual(result["provider"], "grok")
         self.assertEqual(result["analysis"], "xAI response")
 
@@ -89,16 +92,17 @@ class TestAIHotspotAnalyzer(unittest.TestCase):
         self.assertEqual(data["detail"]["code"], "bad_coordinates")
 
     def test_api_endpoint_invalid_grok_key_graceful_fallback(self):
-        resp = self.client.post("/api/ai/analyze-hotspot", json={
-            "lat": 0.5,
-            "lon": 101.5,
-            "date": "2023-08-20",
-            "frp": 15.2,
-            "sensor": "modis",
-            "conf": "80",
-            "daynight": "D",
-            "api_key": "invalid-dummy-key"
-        })
+        with patch("api.app._get_grok_key", return_value=("invalid-dummy-key", "grok")), \
+             patch("api.app.urllib.request.urlopen", side_effect=OSError("provider unavailable")):
+            resp = self.client.post("/api/ai/analyze-hotspot", json={
+                "lat": 0.5,
+                "lon": 101.5,
+                "date": "2023-08-20",
+                "frp": 15.2,
+                "sensor": "modis",
+                "conf": "80",
+                "daynight": "D",
+            })
         self.assertEqual(resp.status_code, 200)
         data = resp.json()
         # Should gracefully fall back to heuristic

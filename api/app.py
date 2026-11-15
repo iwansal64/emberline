@@ -655,17 +655,14 @@ def job_status(job_id: str):
            {"poll": f"/api/jobs/{job_id}"}
 
 
-def _get_grok_key(client_key: str | None = None) -> tuple[str | None, str]:
-    """Retrieve Grok or Groq API key from client parameter, environment variables, .env, or .env.example files.
+def _get_grok_key() -> tuple[str | None, str]:
+    """Retrieve Grok or Groq API key from server environment or local .env files.
     Returns (api_key, provider_name: 'groq' | 'grok' | 'heuristic').
     """
     key = None
-    if client_key and client_key.strip():
-        key = client_key.strip()
-    if not key:
-        env_key = os.getenv("GROK_API_KEY") or os.getenv("GROQ_API_KEY") or os.getenv("XAI_API_KEY")
-        if env_key and env_key.strip():
-            key = env_key.strip()
+    env_key = os.getenv("GROK_API_KEY") or os.getenv("GROQ_API_KEY") or os.getenv("XAI_API_KEY")
+    if env_key and env_key.strip():
+        key = env_key.strip()
     if not key:
         for candidate in (
             ROOT / ".env",
@@ -784,11 +781,10 @@ def _call_grok_hotspot_analysis(
     daynight: str,
     question: str | None = None,
     region: str | None = None,
-    api_key: str | None = None,
     lang: str = "id",
 ) -> dict:
     """Invoke Groq or xAI Grok API for hotspot analysis, falling back to heuristic telemetry if unavailable."""
-    key, provider_type = _get_grok_key(api_key)
+    key, provider_type = _get_grok_key()
     if not key:
         return _analyze_hotspot_heuristic(
             lat=lat, lon=lon, date=date, frp=frp, sensor=sensor,
@@ -976,7 +972,6 @@ def api_analyze_hotspot(body: dict):
     daynight = str(body.get("daynight", "D"))
     region = body.get("region")
     question = body.get("question")
-    api_key = body.get("api_key")
     lang = str(body.get("lang", "id")).lower()
     if lang not in ("id", "en"):
         lang = "id"
@@ -991,7 +986,6 @@ def api_analyze_hotspot(body: dict):
         daynight=daynight,
         question=question,
         region=region,
-        api_key=api_key,
         lang=lang,
     )
 
